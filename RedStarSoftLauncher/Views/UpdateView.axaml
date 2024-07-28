@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:cc="using:RedStarSoftLauncher.Controls"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RedStarSoftLauncher.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="768"
+             x:Class="RedStarSoftLauncher.Views.UpdateView"
+             x:DataType="vm:MainViewModel"
+						 HorizontalAlignment="Stretch"
+						 VerticalAlignment="Stretch">
+	<Design.DataContext>
+		<!-- This only sets the DataContext for the previewer in an IDE,
+         to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+		<vm:MainViewModel />
+	</Design.DataContext>
+
+	<UserControl.Background>
+		<ImageBrush Source="{Binding WindowBackground}"/>
+	</UserControl.Background>
+	<ProgressBar x:Name="UpdateProgress" HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+							 Background="#BFBFBF" Foreground="#00BF00" Height="32"/>
+</UserControl>
