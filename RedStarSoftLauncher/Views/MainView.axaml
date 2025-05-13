@@ -1,0 +1,101 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+						 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+						 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+						 xmlns:cc="using:RedStarSoftLauncher.Controls"
+						 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+						 xmlns:views="clr-namespace:RedStarSoftLauncher.Views"
+						 xmlns:vm="clr-namespace:RedStarSoftLauncher.ViewModels"
+						 mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="768"
+						 x:Class="RedStarSoftLauncher.Views.MainView"
+						 x:DataType="vm:MainViewModel"
+						 HorizontalAlignment="Stretch"
+						 VerticalAlignment="Stretch"
+						 Loaded="UserControl_Loaded">
+	<Design.DataContext>
+		<!-- This only sets the DataContext for the previewer in an IDE,
+				 to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+		<vm:MainViewModel />
+	</Design.DataContext>
+
+	<UserControl.Background>
+		<ImageBrush Source="{Binding WindowBackground}"/>
+	</UserControl.Background>
+	<cc:CanvasEx HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="1024" Height="768">
+		<StackPanel x:Name="MainPanel" cc:CanvasEx.HorizontalAnchor="0.25" cc:CanvasEx.VerticalAnchor="0.5">
+			<ContentControl Background="#FF0000">
+				<ContentControl.Content>
+					<Button HorizontalAlignment="Stretch" Tag="Ares Tools/Ares Tools (Pre-Alpha) 0.4" Click="Button_Click2">
+						<TextBlock HorizontalAlignment="Center" Text="Ares Tools (Pre-Alpha)&#x0a;0.4 (~30 MB)" TextAlignment="Center"/>
+					</Button>
+				</ContentControl.Content>
+			</ContentControl>
+			<ContentControl Background="#FFBF00">
+				<ContentControl.Content>
+					<Button HorizontalAlignment="Stretch" Tag="Cards II/Cards II (Pre-Pre-Alpha) 0.05" Click="Button_Click2">
+						<TextBlock HorizontalAlignment="Center" Text="Cards II (Pre-Pre-Alpha)&#x0a;0.05 (~20 MB)" TextAlignment="Center"/>
+					</Button>
+				</ContentControl.Content>
+			</ContentControl>
+			<ContentControl Background="#00BF00">
+				<ContentControl.Content>
+					<Button HorizontalAlignment="Stretch" Tag="Exlaroveen/Exlaroveen (Pre-Pre-Alpha) 0.05" Click="Button_Click2">
+						<TextBlock HorizontalAlignment="Center" Text="Exlaroveen (Pre-Pre-Alpha)&#x0a;0.05 (~220 MB)" TextAlignment="Center"/>
+					</Button>
+				</ContentControl.Content>
+			</ContentControl>
+			<ContentControl Background="#00BFFF">
+				<ContentControl.Content>
+					<Button HorizontalAlignment="Stretch" Tag="Lineedge (Semi-Alpha) 0.7@20M Pro" Click="Button_Click">
+						<TextBlock HorizontalAlignment="Center" Text="Lineedge (Semi-Alpha)&#x0a;0.7@20M (~15 GB)" TextAlignment="Center"/>
+					</Button>
+				</ContentControl.Content>
+			</ContentControl>
+			<ContentControl Background="#8080FF">
+				<ContentControl.Content>
+					<Button HorizontalAlignment="Stretch" Tag="Lineedge (Semi-Alpha) 0.7@20M Lite" Click="Button_Click">
+						<TextBlock HorizontalAlignment="Center" Text="Lineedge (Semi-Alpha)&#x0a;0.7@20M Lite (~2.5 GB)" TextAlignment="Center"/>
+					</Button>
+				</ContentControl.Content>
+			</ContentControl>
+			<ContentControl Background="#00BFFF">
+				<ContentControl.Content>
+					<Button HorizontalAlignment="Stretch" Tag="Lineedge (Semi-Alpha) 0.75@20 download" Click="Button_Click">
+						<TextBlock HorizontalAlignment="Center" Text="Lineedge (Semi-Alpha)&#x0a;0.75@20 (~5.5 GB)" TextAlignment="Center"/>
+					</Button>
+				</ContentControl.Content>
+			</ContentControl>
+			<ContentControl Background="#8080FF">
+				<ContentControl.Content>
+					<Button HorizontalAlignment="Stretch" Tag="Lineedge (Semi-Alpha) 0.75@20 NoSpeech" Click="Button_Click">
+						<TextBlock HorizontalAlignment="Center" Text="Lineedge (Semi-Alpha)&#x0a;0.75@20 NoSpeech (~2.7 GB)" TextAlignment="Center"/>
+					</Button>
+				</ContentControl.Content>
+			</ContentControl>
+			<Panel>
+				<ProgressBar x:Name="Total" Background="#BFBFBF" Foreground="#FF0000" Height="24"/>
+				<ContentControl Background="#BFBFBF" HorizontalAlignment="Center" VerticalAlignment="Center">
+					<ContentControl.Content>
+						<TextBlock Text="Total"></TextBlock>
+					</ContentControl.Content>
+				</ContentControl>
+			</Panel>
+			<Panel>
+				<ProgressBar x:Name="Current" Background="#BFBFBF" Foreground="#00BF00" Height="24"/>
+				<ContentControl Background="#BFBFBF" HorizontalAlignment="Center" VerticalAlignment="Center">
+					<ContentControl.Content>
+						<TextBlock Text="Current"></TextBlock>
+					</ContentControl.Content>
+				</ContentControl>
+			</Panel>
+			<ContentControl Background="#FF80BF">
+				<ContentControl.Content>
+					<Button HorizontalAlignment="Stretch" Click="Copyrights_Click">
+						<TextBlock HorizontalAlignment="Center" Text="Copyrights" TextAlignment="Center"/>
+					</Button>
+				</ContentControl.Content>
+			</ContentControl>
+		</StackPanel>
+		<views:UpdateView x:Name="UpdateView" Width="1024" Height="768" IsVisible="False"/>
+		<views:CopyrightsView x:Name="CopyrightsView" Width="1024" Height="768" IsVisible="False"/>
+	</cc:CanvasEx>
+</UserControl>
