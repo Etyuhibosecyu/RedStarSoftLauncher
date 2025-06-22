@@ -29,10 +29,17 @@
 					</Button>
 				</ContentControl.Content>
 			</ContentControl>
-			<ContentControl Background="#FFBF00">
+			<ContentControl Background="#FF8000">
 				<ContentControl.Content>
 					<Button HorizontalAlignment="Stretch" Tag="Cards II/Cards II (Pre-Pre-Alpha) 0.05" Click="Button_Click2">
 						<TextBlock HorizontalAlignment="Center" Text="Cards II (Pre-Pre-Alpha)&#x0a;0.05 (~20 MB)" TextAlignment="Center"/>
+					</Button>
+				</ContentControl.Content>
+			</ContentControl>
+			<ContentControl Background="#BFBF00">
+				<ContentControl.Content>
+					<Button HorizontalAlignment="Stretch" Tag="CSharp.NStar/CSharp.NStar Pre-Pre-I-2o1" Click="Button_Click2">
+						<TextBlock HorizontalAlignment="Center" Text="CSharp.NStar&#x0a;Pre-Pre-I-2o1 (~40 MB)" TextAlignment="Center"/>
 					</Button>
 				</ContentControl.Content>
 			</ContentControl>

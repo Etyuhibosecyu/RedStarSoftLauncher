@@ -55,7 +55,7 @@ public partial class MainView : UserControl
 			}
 			var newfilename = filename + ".tmp";
 			var executableName = Path.GetFileName(filename);
-			Uri uri = new(site + "/autoinstaller.php");
+			Uri uri = new(site + "/autoinstaller.php?handle_errors=true");
 			var client = new HttpClient(new HttpClientHandler() { UseDefaultCredentials = true });
 			client.DefaultRequestHeaders.Add("User-Agent",
 				OperatingSystem.IsWindows() ? "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0" : OperatingSystem.IsLinux() ? "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" : throw new InvalidOperationException());
@@ -149,8 +149,8 @@ public partial class MainView : UserControl
 			var tag = await Dispatcher.UIThread.InvokeAsync(() => (sender as Button ?? throw new InvalidOperationException()).Tag + (OperatingSystem.IsWindows() ? "" : OperatingSystem.IsLinux() ? " Linux" : throw new InvalidOperationException()));
 			var downloads = OperatingSystem.IsWindows() ? SHGetKnownFolderPath(new("374DE290-123F-4565-9164-39C4925E467B"), 0) : OperatingSystem.IsLinux() ? "." : throw new InvalidOperationException();
 			var doc = hw.Load(site + "/" + tag.Replace(" Linux", "") + ".html");
-			var hrefs = doc.DocumentNode.SelectNodes("//a[@href]").Select(x => x.Attributes["href"]?.Value ?? "").Where(x => (x?.StartsWith("javascript:location.replace") ?? false)
-			&& (x?.Contains(OperatingSystem.IsWindows() ? ".exe" : OperatingSystem.IsLinux() ? " Linux" : throw new InvalidOperationException()) ?? false)).ToArray();
+			var hrefs = doc.DocumentNode.SelectNodes("//a[@href]").Select(x => x.Attributes["href"]?.Value ?? "").Where(x => (x?.StartsWith("/download.php?file=") ?? false)
+				&& (x?.Contains(OperatingSystem.IsWindows() ? ".exe" : OperatingSystem.IsLinux() ? " Linux" : throw new InvalidOperationException()) ?? false)).ToArray();
 			await Dispatcher.UIThread.InvokeAsync(() => (Total.Value = 0, Current.Value = 0, Total.Maximum = hrefs.Length));
 			await DownloadInternal(tag, downloads, hrefs);
 			tag = tag[(tag.IndexOf('/') + 1)..];
@@ -201,7 +201,7 @@ public partial class MainView : UserControl
 			var filename = downloads + "/Red-Star-Soft/" + (foundIndex == -1 ? throw new InvalidOperationException() : tag = engine.Evaluate("return decodeURI('" + s[foundIndex..] + "');").AsString());
 			Uri uri = new(site + s);
 			using var client = new HttpClient(new HttpClientHandler() { UseDefaultCredentials = true });
-			using var headers = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
+			using var headers = await client.GetAsync(uri + "&handle_errors=true", HttpCompletionOption.ResponseHeadersRead);
 			var start = File.Exists(filename) ? new FileInfo(filename).Length : 0;
 			var contentLength = headers.Content.Headers.ContentLength ?? throw new InvalidOperationException();
 			if (start >= contentLength)
