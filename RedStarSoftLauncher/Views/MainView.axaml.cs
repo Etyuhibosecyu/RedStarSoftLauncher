@@ -4,6 +4,7 @@ using Jint;
 using Microsoft.Win32;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -24,7 +25,7 @@ public partial class MainView : UserControl
 #pragma warning restore SYSLIB1054
 #pragma warning restore IDE0079 // Удалить ненужное подавление
 	private static readonly Engine engine = new();
-	private const string site = "https://red-star-soft.com";
+    internal const string site = "https://red-star-soft.com";
 
 	public MainView()
 	{
@@ -32,7 +33,7 @@ public partial class MainView : UserControl
 		_ = 0;
 	}
 
-	private void UserControl_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => CheckForUpdates().Wait();
+	private async void UserControl_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => await CheckForUpdates();
 
 	private async Task CheckForUpdates()
 	{
@@ -57,7 +58,8 @@ public partial class MainView : UserControl
 			var executableName = Path.GetFileName(filename);
 			Uri uri = new(site + "/autoinstaller.php?handle_errors=true");
 			var client = new HttpClient(new HttpClientHandler() { UseDefaultCredentials = true });
-			client.DefaultRequestHeaders.Add("User-Agent",
+            client.DefaultRequestHeaders.Referrer = new(site + "/Lineedge/");
+            client.DefaultRequestHeaders.Add("User-Agent",
 				OperatingSystem.IsWindows() ? "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0" : OperatingSystem.IsLinux() ? "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" : throw new InvalidOperationException());
 			using var headers = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).Result;
 			var start = File.Exists(newfilename) ? new FileInfo(newfilename).Length : 0;
@@ -74,12 +76,12 @@ public partial class MainView : UserControl
 			if (start >= contentLength)
 				new Thread(() => UpdateView.ExecuteScript(client, uri, filename, checksum, contentLength)) { Name = "Downloading", IsBackground = true }.Start();
 			else
-				new Thread(() => UpdateView.DownloadUpdate(client, uri, filename, checksum, start, contentLength)) { Name = "Downloading", IsBackground = true }.Start();
+				new Thread(async () => await UpdateView.DownloadUpdate(client, uri, filename, checksum, start, contentLength)) { Name = "Downloading", IsBackground = true }.Start();
 		}
 		catch
 		{
 			await Dispatcher.UIThread.InvokeAsync(async () =>
-				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to start the launcher. Check your Internet connection and/or retry later. If the problem persists, contact the app developers.", ButtonEnum.Ok).ShowAsync());
+				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to start the launcher. Check your Internet connection and/or retry later. If the problem persists, contact the app developers.", ButtonEnum.Ok).ShowAsPopupAsync(this));
 			Environment.Exit(0);
 		}
 #if DEBUG
@@ -89,26 +91,40 @@ public partial class MainView : UserControl
 
 	private void Button_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
 	{
-		Thread thread = new(Download) { Name = "Downloading files", IsBackground = true };
+		Thread thread = new(DownloadLineedge) { Name = "Downloading files", IsBackground = true };
 		thread.Start(sender);
 	}
 
 	private void Button_Click2(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
 	{
-		Thread thread = new(Download2) { Name = "Downloading files", IsBackground = true };
+		Thread thread = new(Download) { Name = "Downloading files", IsBackground = true };
 		thread.Start(sender);
 	}
 
-	private async void Download(object? sender)
+	private async void DownloadLineedge(object? sender)
 	{
 		try
 		{
+			if (OperatingSystem.IsLinux())
+			{
+				await Dispatcher.UIThread.InvokeAsync(async () =>
+					await MessageBoxManager.GetMessageBoxStandard("", "This app temporarily cannot download Lineedge on Linux.", ButtonEnum.Ok).ShowAsPopupAsync(this));
+				return;
+			}
 			HtmlWeb hw = new();
 			var tag = await Dispatcher.UIThread.InvokeAsync(() => (sender as Button ?? throw new InvalidOperationException()).Tag + (OperatingSystem.IsWindows() ? "" : OperatingSystem.IsLinux() ? " Linux" : throw new InvalidOperationException()));
 			var downloads = OperatingSystem.IsWindows() ? SHGetKnownFolderPath(new("374DE290-123F-4565-9164-39C4925E467B"), 0) : OperatingSystem.IsLinux() ? "." : throw new InvalidOperationException();
-			var doc = hw.Load(site + "/Lineedge/" + tag + ".html");
-			var hrefs = doc.DocumentNode.SelectNodes("//a[@href]").Select(x => x.Attributes["href"]?.Value ?? "").Where(x => x?.StartsWith("/download.php?file=") ?? false).ToArray();
-			await Dispatcher.UIThread.InvokeAsync(() => (Total.Value = 0, Current.Value = 0, Total.Maximum = hrefs.Length));
+			var doc = hw.Load(site + "/Lineedge/" + tag + ".php");
+			var numbers = doc.DocumentNode.SelectNodes("//a[@name]").Select(x => x.Attributes["name"]?.Value ?? "").Where(x => int.TryParse(x, out _)).Select(int.Parse).ToArray();
+			if (numbers.Length != 2)
+				throw new InvalidOperationException();
+			List<string> hrefsList = ["/download.php?file=" + tag.Replace(" download", "") + ".exe"];
+			for (var i = 1; i <= numbers[0]; i++)
+				hrefsList.Add("/download.php?file=" + tag.Replace(" download", "") + '-' + i + ".bin");
+			for (var i = 2; i <= numbers[1]; i++)
+                hrefsList.Add("/download.php?file=" + tag.Replace(" download", "") + " build " + i + ".bin");
+			var hrefs = hrefsList.ToArray();
+            await Dispatcher.UIThread.InvokeAsync(() => (Total.Value = 0, Current.Value = 0, Total.Maximum = hrefs.Length));
 			await DownloadInternal(tag, downloads, hrefs);
 			if (OperatingSystem.IsWindows())
 			{
@@ -137,11 +153,11 @@ public partial class MainView : UserControl
 		catch
 		{
 			await Dispatcher.UIThread.InvokeAsync(async () =>
-				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to download the Lineedge files. Check your Internet connection and/or retry later. If the problem persists, contact the app developers.", ButtonEnum.Ok).ShowAsync());
+				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to download the Lineedge files. Check your Internet connection and/or retry later. If the problem persists, contact the app developers.", ButtonEnum.Ok).ShowAsPopupAsync(this));
 		}
 	}
 
-	private async void Download2(object? sender)
+	private async void Download(object? sender)
 	{
 		try
 		{
@@ -184,7 +200,7 @@ public partial class MainView : UserControl
 		catch
 		{
 			await Dispatcher.UIThread.InvokeAsync(async () =>
-				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to download the app files. Check your Internet connection and/or retry later. If the problem persists, contact the app developers.", ButtonEnum.Ok).ShowAsync());
+				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to download the app files. Check your Internet connection and/or retry later. If the problem persists, contact the app developers.", ButtonEnum.Ok).ShowAsPopupAsync(this));
 		}
 	}
 
@@ -201,6 +217,7 @@ public partial class MainView : UserControl
 			var filename = downloads + "/Red-Star-Soft/" + (foundIndex == -1 ? throw new InvalidOperationException() : tag = engine.Evaluate("return decodeURI('" + s[foundIndex..] + "');").AsString());
 			Uri uri = new(site + s);
 			using var client = new HttpClient(new HttpClientHandler() { UseDefaultCredentials = true });
+			client.DefaultRequestHeaders.Referrer = new(site + "/Lineedge/");
 			using var headers = await client.GetAsync(uri + "&handle_errors=true", HttpCompletionOption.ResponseHeadersRead);
 			var start = File.Exists(filename) ? new FileInfo(filename).Length : 0;
 			var contentLength = headers.Content.Headers.ContentLength ?? throw new InvalidOperationException();
@@ -229,7 +246,7 @@ public partial class MainView : UserControl
 		}
 	}
 
-	private static async Task LaunchOnWindows(string downloads, string tag)
+	private async Task LaunchOnWindows(string downloads, string tag)
 	{
 		var buildTags = new[] { tag, tag + " build 2", tag + " build 3", tag + " build 4", tag + " build 5", tag + " build 6", tag + " build 7", tag + " build 8", tag + " build 9", tag + " build 10" };
 		string? launchName = null;
@@ -269,7 +286,7 @@ public partial class MainView : UserControl
 		}
 	}
 
-	private static async Task<(bool Success, string? Filename)> ValidateInstallation(string tag)
+	private async Task<(bool Success, string? Filename)> ValidateInstallation(string tag)
 	{
 		var registry_key = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
 #pragma warning disable IDE0079 // Удалить ненужное подавление
@@ -278,7 +295,7 @@ public partial class MainView : UserControl
 		if (key == null)
 		{
 			await Dispatcher.UIThread.InvokeAsync(async () =>
-				await MessageBoxManager.GetMessageBoxStandard("", "Error: probably your system is seriously corrupted, and in general, it's surprising how at least something works for you.", ButtonEnum.Ok).ShowAsync());
+				await MessageBoxManager.GetMessageBoxStandard("", "Error: probably your system is seriously corrupted, and in general, it's surprising how at least something works for you.", ButtonEnum.Ok).ShowAsPopupAsync(this));
 			return (false, null);
 		}
 		foreach (var x in key.GetSubKeyNames())

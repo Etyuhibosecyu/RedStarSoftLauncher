@@ -50,31 +50,24 @@
 					</Button>
 				</ContentControl.Content>
 			</ContentControl>
-			<ContentControl Background="#00BFFF">
+			<ContentControl x:Name="ContentLineedgeAndroid" Background="#00BFFF">
 				<ContentControl.Content>
-					<Button HorizontalAlignment="Stretch" Tag="Lineedge (Semi-Alpha) 0.7@20M Pro" Click="Button_Click">
-						<TextBlock HorizontalAlignment="Center" Text="Lineedge (Semi-Alpha)&#x0a;0.7@20M (~15 GB)" TextAlignment="Center"/>
+					<Button HorizontalAlignment="Stretch" Tag="Lineedge (Semi-Alpha) 0.777 download" Click="Button_Click">
+						<TextBlock HorizontalAlignment="Center" Text="Lineedge (Semi-Alpha)&#x0a;0.777 (~5.5 GB)" TextAlignment="Center"/>
 					</Button>
 				</ContentControl.Content>
 			</ContentControl>
 			<ContentControl Background="#8080FF">
 				<ContentControl.Content>
-					<Button HorizontalAlignment="Stretch" Tag="Lineedge (Semi-Alpha) 0.7@20M Lite" Click="Button_Click">
-						<TextBlock HorizontalAlignment="Center" Text="Lineedge (Semi-Alpha)&#x0a;0.7@20M Lite (~2.5 GB)" TextAlignment="Center"/>
+					<Button HorizontalAlignment="Stretch" Tag="Lineedge (Semi-Alpha) 0.777 NoSpeech" Click="Button_Click">
+						<TextBlock HorizontalAlignment="Center" Text="Lineedge (Semi-Alpha)&#x0a;0.777 NoSpeech (~2.7 GB)" TextAlignment="Center"/>
 					</Button>
 				</ContentControl.Content>
 			</ContentControl>
 			<ContentControl Background="#00BFFF">
 				<ContentControl.Content>
-					<Button HorizontalAlignment="Stretch" Tag="Lineedge (Semi-Alpha) 0.75@20 download" Click="Button_Click">
-						<TextBlock HorizontalAlignment="Center" Text="Lineedge (Semi-Alpha)&#x0a;0.75@20 (~5.5 GB)" TextAlignment="Center"/>
-					</Button>
-				</ContentControl.Content>
-			</ContentControl>
-			<ContentControl Background="#8080FF">
-				<ContentControl.Content>
-					<Button HorizontalAlignment="Stretch" Tag="Lineedge (Semi-Alpha) 0.75@20 NoSpeech" Click="Button_Click">
-						<TextBlock HorizontalAlignment="Center" Text="Lineedge (Semi-Alpha)&#x0a;0.75@20 NoSpeech (~2.7 GB)" TextAlignment="Center"/>
+					<Button HorizontalAlignment="Stretch" Tag="Lineedge (Semi-Alpha) 0.8 download" Click="Button_Click">
+						<TextBlock HorizontalAlignment="Center" Text="Lineedge (Semi-Alpha)&#x0a;0.8 (~2.9 GB)" TextAlignment="Center"/>
 					</Button>
 				</ContentControl.Content>
 			</ContentControl>
@@ -94,7 +87,7 @@
 					</ContentControl.Content>
 				</ContentControl>
 			</Panel>
-			<ContentControl Background="#FF80BF">
+			<ContentControl x:Name="ContentCopyrights" Background="#FF80BF">
 				<ContentControl.Content>
 					<Button HorizontalAlignment="Stretch" Click="Copyrights_Click">
 						<TextBlock HorizontalAlignment="Center" Text="Copyrights" TextAlignment="Center"/>

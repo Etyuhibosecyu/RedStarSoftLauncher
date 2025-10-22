@@ -6,17 +6,19 @@ using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace RedStarSoftLauncher.Views;
 public partial class UpdateView : UserControl
 {
 	public UpdateView() => InitializeComponent();
 
-	public void DownloadUpdate(HttpClient client, Uri uri, string filename, string? checksum, long start, long contentLength)
+	public async Task DownloadUpdate(HttpClient client, Uri uri, string filename, string? checksum, long start, long contentLength)
 	{
 		try
 		{
-			client.DefaultRequestHeaders.Range = new(start, contentLength);
+            client.DefaultRequestHeaders.Referrer = new(MainView.site + "/Lineedge/");
+            client.DefaultRequestHeaders.Range = new(start, contentLength);
 			using var stream = client.GetStreamAsync(uri).Result;
 			var bytesLeft = stream.GetType()?.GetField("_contentBytesRemaining", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(stream) is ulong ul ? ul : throw new InvalidOperationException();
 			var bytes = new byte[1048576];
@@ -38,8 +40,8 @@ public partial class UpdateView : UserControl
 		}
 		catch
 		{
-			Dispatcher.UIThread.InvokeAsync(async () =>
-				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to start the launcher. Check your Internet connection and/or retry later. If the problem persists, contact the app developers.", ButtonEnum.Ok).ShowAsync()).Wait();
+			await Dispatcher.UIThread.InvokeAsync(async () =>
+				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to start the launcher. Check your Internet connection and/or retry later. If the problem persists, contact the app developers.", ButtonEnum.Ok).ShowAsPopupAsync(this));
 			Environment.Exit(0);
 		}
 	}
@@ -51,10 +53,10 @@ public partial class UpdateView : UserControl
 			if (!(checksum?.Equals(Convert.ToHexString(SHA512.HashData(File.ReadAllBytes(filename + ".tmp"))), StringComparison.OrdinalIgnoreCase) ?? false))
 			{
 				if (Dispatcher.UIThread.InvokeAsync(async () =>
-					await MessageBoxManager.GetMessageBoxStandard("", "The new launcher version file has been corrupted. Press OK to download again or Cancel to exit.", ButtonEnum.OkCancel).ShowAsync()).Result == ButtonResult.Ok)
+					await MessageBoxManager.GetMessageBoxStandard("", "The new launcher version file has been corrupted. Press OK to download again or Cancel to exit.", ButtonEnum.OkCancel).ShowAsPopupAsync(this)).Result == ButtonResult.Ok)
 				{
 					File.Delete(filename + ".tmp");
-					new Thread(() => DownloadUpdate(client, uri, filename, checksum, 0, contentLength)) { Name = "Downloading", IsBackground = true }.Start();
+					new Thread(async () => await DownloadUpdate(client, uri, filename, checksum, 0, contentLength)) { Name = "Downloading", IsBackground = true }.Start();
 					return;
 				}
 				else
@@ -89,7 +91,7 @@ public partial class UpdateView : UserControl
 		catch (Exception ex)
 		{
 			Dispatcher.UIThread.InvokeAsync(async () =>
-				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to start the launcher. Check your Internet connection and/or retry later. If the problem persists, contact the app developers." + ex.Message, ButtonEnum.Ok).ShowAsync()).Wait();
+				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to start the launcher. Check your Internet connection and/or retry later. If the problem persists, contact the app developers." + ex.Message, ButtonEnum.Ok).ShowAsPopupAsync(this)).Wait();
 			Environment.Exit(0);
 		}
 	}
