@@ -13,30 +13,30 @@ public partial class UpdateView : UserControl
 {
 	public UpdateView() => InitializeComponent();
 
-	public async Task DownloadUpdate(HttpClient client, Uri uri, string filename, string? checksum, long start, long contentLength)
+	public async ValueTask DownloadUpdate(HttpClient client, Uri uri, string filename, string? checksum, long start, long contentLength)
 	{
 		try
 		{
             client.DefaultRequestHeaders.Referrer = new(MainView.site + "/Lineedge/");
             client.DefaultRequestHeaders.Range = new(start, contentLength);
-			using var stream = client.GetStreamAsync(uri).Result;
+			using var stream = await client.GetStreamAsync(uri);
 			var bytesLeft = stream.GetType()?.GetField("_contentBytesRemaining", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(stream) is ulong ul ? ul : throw new InvalidOperationException();
 			var bytes = new byte[1048576];
 			using FileStream fs = new(filename + ".tmp", FileMode.Append, FileAccess.Write);
-			Dispatcher.UIThread.InvokeAsync(() => (SetUpdateProgress(0), SetUpdateMaximum(contentLength))).Wait();
+			await Dispatcher.UIThread.InvokeAsync(() => (SetUpdateProgress(0), SetUpdateMaximum(contentLength)));
 			while (bytesLeft > (ulong)bytes.Length)
 			{
 				stream.ReadExactly(bytes);
 				fs.Write(bytes, 0, bytes.Length);
 				bytesLeft -= (ulong)bytes.Length;
-				Dispatcher.UIThread.InvokeAsync(() => SetUpdateProgress((double)contentLength - bytesLeft)).Wait();
+				await Dispatcher.UIThread.InvokeAsync(() => SetUpdateProgress((double)contentLength - bytesLeft));
 			}
 			bytes = new byte[(int)bytesLeft];
 			stream.ReadExactly(bytes);
 			fs.Write(bytes, 0, bytes.Length);
 			stream.Dispose();
 			fs.Dispose();
-			ExecuteScript(client, uri, filename, checksum, contentLength);
+			await ExecuteScript(client, uri, filename, checksum, contentLength);
 		}
 		catch
 		{
@@ -46,14 +46,14 @@ public partial class UpdateView : UserControl
 		}
 	}
 
-	public void ExecuteScript(HttpClient client, Uri uri, string filename, string? checksum, long contentLength)
+	public async ValueTask ExecuteScript(HttpClient client, Uri uri, string filename, string? checksum, long contentLength)
 	{
 		try
 		{
 			if (!(checksum?.Equals(Convert.ToHexString(SHA512.HashData(File.ReadAllBytes(filename + ".tmp"))), StringComparison.OrdinalIgnoreCase) ?? false))
 			{
-				if (Dispatcher.UIThread.InvokeAsync(async () =>
-					await MessageBoxManager.GetMessageBoxStandard("", "The new launcher version file has been corrupted. Press OK to download again or Cancel to exit.", ButtonEnum.OkCancel).ShowAsPopupAsync(this)).Result == ButtonResult.Ok)
+				if (await Dispatcher.UIThread.InvokeAsync(async () =>
+					await MessageBoxManager.GetMessageBoxStandard("", "The new launcher version file has been corrupted. Press OK to download again or Cancel to exit.", ButtonEnum.OkCancel).ShowAsPopupAsync(this)) == ButtonResult.Ok)
 				{
 					File.Delete(filename + ".tmp");
 					new Thread(async () => await DownloadUpdate(client, uri, filename, checksum, 0, contentLength)) { Name = "Downloading", IsBackground = true }.Start();
@@ -90,8 +90,8 @@ public partial class UpdateView : UserControl
 		}
 		catch (Exception ex)
 		{
-			Dispatcher.UIThread.InvokeAsync(async () =>
-				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to start the launcher. Check your Internet connection and/or retry later. If the problem persists, contact the app developers." + ex.Message, ButtonEnum.Ok).ShowAsPopupAsync(this)).Wait();
+			await Dispatcher.UIThread.InvokeAsync(async () =>
+				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to start the launcher. Check your Internet connection and/or retry later. If the problem persists, contact the app developers." + ex.Message, ButtonEnum.Ok).ShowAsPopupAsync(this));
 			Environment.Exit(0);
 		}
 	}

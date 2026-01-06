@@ -25,7 +25,7 @@ public partial class MainView : UserControl
 #pragma warning restore SYSLIB1054
 #pragma warning restore IDE0079 // Удалить ненужное подавление
 	private static readonly Engine engine = new();
-    internal const string site = "https://red-star-soft.com";
+	internal const string site = "https://red-star-soft.com";
 
 	public MainView()
 	{
@@ -35,7 +35,7 @@ public partial class MainView : UserControl
 
 	private async void UserControl_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => await CheckForUpdates();
 
-	private async Task CheckForUpdates()
+	private async ValueTask CheckForUpdates()
 	{
 #if DEBUG
 		return;
@@ -58,10 +58,10 @@ public partial class MainView : UserControl
 			var executableName = Path.GetFileName(filename);
 			Uri uri = new(site + "/autoinstaller.php?handle_errors=true");
 			var client = new HttpClient(new HttpClientHandler() { UseDefaultCredentials = true });
-            client.DefaultRequestHeaders.Referrer = new(site + "/Lineedge/");
-            client.DefaultRequestHeaders.Add("User-Agent",
+			client.DefaultRequestHeaders.Referrer = new(site + "/Lineedge/");
+			client.DefaultRequestHeaders.Add("User-Agent",
 				OperatingSystem.IsWindows() ? "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0" : OperatingSystem.IsLinux() ? "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0" : throw new InvalidOperationException());
-			using var headers = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).Result;
+			using var headers = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
 			var start = File.Exists(newfilename) ? new FileInfo(newfilename).Length : 0;
 			var checksum = headers.Headers.GetValues("Content-Checksum").FirstOrDefault();
 			if (checksum?.Equals(Convert.ToHexString(SHA512.HashData(File.ReadAllBytes(filename))), StringComparison.OrdinalIgnoreCase) ?? false)
@@ -74,7 +74,7 @@ public partial class MainView : UserControl
 			MainPanel.IsVisible = false;
 			UpdateView.IsVisible = true;
 			if (start >= contentLength)
-				new Thread(() => UpdateView.ExecuteScript(client, uri, filename, checksum, contentLength)) { Name = "Downloading", IsBackground = true }.Start();
+				new Thread(async () => await UpdateView.ExecuteScript(client, uri, filename, checksum, contentLength)) { Name = "Downloading", IsBackground = true }.Start();
 			else
 				new Thread(async () => await UpdateView.DownloadUpdate(client, uri, filename, checksum, start, contentLength)) { Name = "Downloading", IsBackground = true }.Start();
 		}
@@ -122,9 +122,9 @@ public partial class MainView : UserControl
 			for (var i = 1; i <= numbers[0]; i++)
 				hrefsList.Add("/download.php?file=" + tag.Replace(" download", "") + '-' + i + ".bin");
 			for (var i = 2; i <= numbers[1]; i++)
-                hrefsList.Add("/download.php?file=" + tag.Replace(" download", "") + " build " + i + ".bin");
+				hrefsList.Add("/download.php?file=" + tag.Replace(" download", "") + " build " + i + ".bin");
 			var hrefs = hrefsList.ToArray();
-            await Dispatcher.UIThread.InvokeAsync(() => (Total.Value = 0, Current.Value = 0, Total.Maximum = hrefs.Length));
+			await Dispatcher.UIThread.InvokeAsync(() => (Total.Value = 0, Current.Value = 0, Total.Maximum = hrefs.Length));
 			await DownloadInternal(tag, downloads, hrefs);
 			if (OperatingSystem.IsWindows())
 			{
@@ -204,7 +204,7 @@ public partial class MainView : UserControl
 		}
 	}
 
-	private async Task DownloadInternal(string tag, string downloads, string[] hrefs)
+	private async ValueTask DownloadInternal(string tag, string downloads, string[] hrefs)
 	{
 		foreach (var href in hrefs)
 		{
@@ -216,7 +216,7 @@ public partial class MainView : UserControl
 				Directory.CreateDirectory(downloads + "/Red-Star-Soft");
 			var filename = downloads + "/Red-Star-Soft/" + (foundIndex == -1 ? throw new InvalidOperationException() : tag = engine.Evaluate("return decodeURI('" + s[foundIndex..] + "');").AsString());
 			Uri uri = new(site + s);
-			using var client = new HttpClient(new HttpClientHandler() { UseDefaultCredentials = true });
+			var client = new HttpClient(new HttpClientHandler() { UseDefaultCredentials = true });
 			client.DefaultRequestHeaders.Referrer = new(site + "/Lineedge/");
 			using var headers = await client.GetAsync(uri + "&handle_errors=true", HttpCompletionOption.ResponseHeadersRead);
 			var start = File.Exists(filename) ? new FileInfo(filename).Length : 0;
@@ -226,9 +226,13 @@ public partial class MainView : UserControl
 				await Dispatcher.UIThread.InvokeAsync(() => (Current.Value = 0, Total.Value++));
 				continue;
 			}
-			client.DefaultRequestHeaders.Range = new(start, contentLength);
-			using var stream = await client.GetStreamAsync(uri);
-			var bytesLeft = stream.GetType()?.GetField("_contentBytesRemaining", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(stream) is ulong ul ? ul : throw new InvalidOperationException();
+            client.Dispose();
+            Thread.Sleep(5000);
+            client = new HttpClient(new HttpClientHandler() { UseDefaultCredentials = true });
+            client.DefaultRequestHeaders.Referrer = new(site + "/Lineedge/");
+            client.DefaultRequestHeaders.Range = new(start, contentLength);
+            using var stream = await client.GetStreamAsync(uri);
+            var bytesLeft = stream.GetType()?.GetField("_contentBytesRemaining", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(stream) is ulong ul ? ul : throw new InvalidOperationException();
 			var bytes = new byte[1048576];
 			using FileStream fs = new(filename, FileMode.Append, FileAccess.Write);
 			await Dispatcher.UIThread.InvokeAsync(() => Current.Maximum = contentLength);
@@ -242,11 +246,12 @@ public partial class MainView : UserControl
 			bytes = new byte[(int)bytesLeft];
 			stream.ReadExactly(bytes);
 			fs.Write(bytes, 0, bytes.Length);
+            client.Dispose();
 			await Dispatcher.UIThread.InvokeAsync(() => (Current.Value = 0, Total.Value++));
 		}
 	}
 
-	private async Task LaunchOnWindows(string downloads, string tag)
+	private async ValueTask LaunchOnWindows(string downloads, string tag)
 	{
 		var buildTags = new[] { tag, tag + " build 2", tag + " build 3", tag + " build 4", tag + " build 5", tag + " build 6", tag + " build 7", tag + " build 8", tag + " build 9", tag + " build 10" };
 		string? launchName = null;
@@ -286,7 +291,7 @@ public partial class MainView : UserControl
 		}
 	}
 
-	private async Task<(bool Success, string? Filename)> ValidateInstallation(string tag)
+	private async ValueTask<(bool Success, string? Filename)> ValidateInstallation(string tag)
 	{
 		var registry_key = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
 #pragma warning disable IDE0079 // Удалить ненужное подавление
