@@ -37,10 +37,13 @@ public partial class MainView : UserControl
 
 	private async ValueTask CheckForUpdates()
 	{
-#if DEBUG
-		return;
-#pragma warning disable CS0162 // Обнаружен недостижимый код
-#endif
+		if (OperatingSystem.IsWindows() && !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
+		{
+			await Dispatcher.UIThread.InvokeAsync(async () =>
+				await MessageBoxManager.GetMessageBoxStandard("", "An attempt to run the launcher on the wrong OS detected. It supports either Windows 11 or Linux.", ButtonEnum.Ok).ShowAsPopupAsync(this));
+			Environment.Exit(0);
+		}
+#if !DEBUG
 		try
 		{
 			var filename = Process.GetCurrentProcess().MainModule?.FileName ?? throw new InvalidOperationException();
@@ -84,8 +87,6 @@ public partial class MainView : UserControl
 				await MessageBoxManager.GetMessageBoxStandard("", "A serious error has occurred while trying to start the launcher. Check your Internet connection and/or retry later. If the problem persists, contact the app developers.", ButtonEnum.Ok).ShowAsPopupAsync(this));
 			Environment.Exit(0);
 		}
-#if DEBUG
-#pragma warning restore CS0162 // Обнаружен недостижимый код
 #endif
 	}
 
